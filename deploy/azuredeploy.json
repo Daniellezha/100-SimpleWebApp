@@ -1,0 +1,81 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01-preview/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "simpleWebAppPlanName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "simpleWebAppPlanSKU": {
+      "type": "string",
+      "allowedValues": [
+        "Free",
+        "Shared",
+        "Basic",
+        "Standard"
+      ],
+      "defaultValue": "Free"
+    },
+    "simpleWebAppPlanWorkerSize": {
+      "type": "string",
+      "allowedValues": [
+        "0",
+        "1",
+        "2"
+      ],
+      "defaultValue": "0"
+    },
+    "simpleWebAppPlanWorkerCount": {
+      "type": "string",
+      "defaultValue": "1"
+    }
+  },
+  "variables": {
+    "simpleWebAppName": "[concat('simpleWebApp', uniqueString(resourceGroup().id))]"
+  },
+  "resources": [
+    {
+      "name": "[parameters('simpleWebAppPlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2014-06-01",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "simpleWebAppPlan"
+      },
+      "properties": {
+        "name": "[parameters('simpleWebAppPlanName')]",
+        "sku": "[parameters('simpleWebAppPlanSKU')]",
+        "workerSize": "[parameters('simpleWebAppPlanWorkerSize')]",
+        "numberOfWorkers": "[parameters('simpleWebAppPlanWorkerCount')]"
+      }
+    },
+    {
+      "name": "[variables('simpleWebAppName')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-08-01",
+      "dependsOn": [
+        "[concat('Microsoft.Web/serverfarms/', parameters('simpleWebAppPlanName'))]"
+      ],
+      "tags": {
+        "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', parameters('simpleWebAppPlanName'))]": "Resource",
+        "displayName": "simpleWebApp"
+      },
+      "properties": {
+        "name": "[variables('simpleWebAppName')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/', parameters('simpleWebAppPlanName'))]"
+      }
+    }
+  ],
+  "outputs": {
+    "webAppName": {
+      "type": "string",
+      "value": "[variables('simpleWebAppName')]"
+    },
+    "webAppUri": {
+      "type": "string",
+      "value": "[concat('http://',reference(resourceId('Microsoft.Web/sites', variables('simpleWebAppName'))).hostNames[0])]"
+    }
+  }
+}
